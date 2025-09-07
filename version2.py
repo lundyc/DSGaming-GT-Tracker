@@ -1,7 +1,8 @@
 from PIL import Image, ImageOps
 import easyocr
-import base64, requests, os, re, warnings
+import base64, requests, os, re, warnings, csv, json
 from urllib.parse import quote_plus
+from datetime import datetime, timezone
 
 # ---- quiet Torch + EasyOCR noise ----
 warnings.filterwarnings("ignore", message=".*pin_memory.*")
@@ -18,6 +19,7 @@ except Exception:
 HOST = "149.202.87.35:27015"
 START = "-1w"
 OUT_DIR = "images"
+DATA_DIR = "data"
 CROP_BOX = (39, 0, 260, 152)
 SCALE_FACTOR = 2
 
@@ -30,7 +32,7 @@ def build_url(name: str) -> str:
 
 def download_image(url: str, out_path: str) -> str:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    r = requests.get(url, timeout=20)
+    r = requests.get(url, timeout=20, headers={"User-Agent": "GTStatsBot/1.0"})
     r.raise_for_status()
     with open(out_path, "wb") as f:
         f.write(r.content)
@@ -42,6 +44,7 @@ def ocr_total_minutes(reader, image_path: str) -> int:
         (gray.width * SCALE_FACTOR, gray.height * SCALE_FACTOR),
         resample=Image.Resampling.LANCZOS
     )
+    os.makedirs(OUT_DIR, exist_ok=True)
     tmp_path = os.path.join(OUT_DIR, "inprogress.png")
     resized.save(tmp_path)
     tokens = reader.readtext(tmp_path, detail=0)
@@ -58,6 +61,43 @@ def ocr_total_minutes(reader, image_path: str) -> int:
 def load_admins(path="admins.txt"):
     with open(path, "r", encoding="utf-8") as f:
         return [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
+
+def write_outputs(results, week_label="last-7d"):
+    """Write TXT, CSV, JSON and append to historical CSV."""
+    run_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    run_date = run_at[:10]  # YYYY-MM-DD
+    rows = [{"run_at_utc": run_at, "week_label": week_label, "admin_name": n, "minutes": t}
+            for n, t in results]
+
+    # TXT
+    with open("weekly_results.txt", "w", encoding="utf-8") as f:
+        f.write("GT FOR PUBLIC\n")
+        for r in rows:
+            f.write(f"{r['admin_name']} = {r['minutes']}\n")
+
+    # Per-run CSV
+    os.makedirs(DATA_DIR, exist_ok=True)
+    per_run_csv = os.path.join(DATA_DIR, f"{run_date}_weekly_results.csv")
+    with open(per_run_csv, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["run_at_utc","week_label","admin_name","minutes"])
+        w.writeheader()
+        w.writerows(rows)
+
+    # JSON (optional, handy)
+    with open("weekly_results.json", "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=2)
+
+    # Append to history CSV
+    history_csv = os.path.join(DATA_DIR, "leaderboard_history.csv")
+    file_exists = os.path.exists(history_csv)
+    with open(history_csv, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["run_at_utc","week_label","admin_name","minutes"])
+        if not file_exists:
+            w.writeheader()
+        w.writerows(rows)
+
+    print(f"Saved results to weekly_results.txt and {per_run_csv}")
+    return per_run_csv, history_csv
 
 def main():
     admins = load_admins()
@@ -85,14 +125,8 @@ def main():
     for name, total in results:
         print(f"{name} = {total}")
 
-    # ---- also save to weekly_results.txt ----
-    out_file = "weekly_results.txt"
-    with open(out_file, "w", encoding="utf-8") as f:
-        f.write("GT FOR PUBLIC\n")
-        for name, total in results:
-            f.write(f"{name} = {total}\n")
-
-    print(f"\nSaved results to {out_file}")
+    # ---- write files (TXT/CSV/JSON + append to history) ----
+    write_outputs(results, week_label="last-7d")
 
 if __name__ == "__main__":
     main()

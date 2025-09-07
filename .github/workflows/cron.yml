@@ -1,0 +1,41 @@
+name: Weekly GameTracker OCR
+
+on:
+  schedule:
+    # Every Sunday at 07:00 UTC
+    - cron: "0 7 * * 0"
+  workflow_dispatch:
+
+jobs:
+  run-ocr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare admins list
+        run: |
+          if [ ! -f admins.txt ]; then
+            cp admins.sample.txt admins.txt || echo -e "US-B\nElSanto" > admins.txt
+          fi
+
+      - name: Run script
+        run: |
+          python gametime_ocr.py
+
+      - name: Upload weekly results
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-results
+          path: weekly_results.txt
+          if-no-files-found: error
