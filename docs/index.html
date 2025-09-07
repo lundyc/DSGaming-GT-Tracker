@@ -1,160 +1,217 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8" />
-  <title>GameTracker OCR — Weekly Admin Stats</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-    h1 { margin: 0 0 8px; }
-    .muted { color: #666; margin: 0 0 20px; }
-    .wrap { display: grid; gap: 24px; }
-    .card { padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); background: #fff; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
-    th { background: #fafafa; }
-    .grid { display: grid; gap: 24px; grid-template-columns: 1fr; }
-    @media (min-width: 960px) { .grid { grid-template-columns: 1.2fr 1fr; } }
-    .small { font-size: 12px; color: #777; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <meta charset="utf-8" />
+          <title>GameTracker OCR — Weekly Admin Stats</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+                    body {
+                              font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+                              margin: 24px;
+                    }
+
+                    h1 {
+                              margin: 0 0 8px;
+                    }
+
+                    .muted {
+                              color: #666;
+                              margin: 0 0 20px;
+                    }
+
+                    .wrap {
+                              display: grid;
+                              gap: 24px;
+                    }
+
+                    .card {
+                              padding: 16px;
+                              border: 1px solid #e5e7eb;
+                              border-radius: 12px;
+                              box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+                              background: #fff;
+                    }
+
+                    table {
+                              width: 100%;
+                              border-collapse: collapse;
+                    }
+
+                    th,
+                    td {
+                              padding: 8px 10px;
+                              border-bottom: 1px solid #eee;
+                              text-align: left;
+                    }
+
+                    th {
+                              background: #fafafa;
+                    }
+
+                    .grid {
+                              display: grid;
+                              gap: 24px;
+                              grid-template-columns: 1fr;
+                    }
+
+                    @media (min-width: 960px) {
+                              .grid {
+                                        grid-template-columns: 1.2fr 1fr;
+                              }
+                    }
+
+                    .small {
+                              font-size: 12px;
+                              color: #777;
+                    }
+          </style>
+          <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  <h1>Weekly Admin Stats</h1>
-  <p class="muted">Auto-updated every Sunday from GameTracker OCR results.</p>
+          <h1>Weekly Admin Stats</h1>
+          <p class="muted">Auto-updated every Sunday from GameTracker OCR results.</p>
 
-  <div class="wrap grid">
-    <div class="card">
-      <h3>Latest Week — Top Admins</h3>
-      <canvas id="barTop"></canvas>
-      <p class="small" id="latestLabel"></p>
-    </div>
+          <div class="wrap grid">
+                    <div class="card">
+                              <h3>Latest Week — Top Admins</h3>
+                              <canvas id="barTop"></canvas>
+                              <p class="small" id="latestLabel"></p>
+                    </div>
 
-    <div class="card">
-      <h3>Latest Week — Table</h3>
-      <table id="latestTable">
-        <thead><tr><th>#</th><th>Admin</th><th>Minutes</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p class="small">Source: <code>data/leaderboard_history.csv</code></p>
-    </div>
+                    <div class="card">
+                              <h3>Latest Week — Table</h3>
+                              <table id="latestTable">
+                                        <thead>
+                                                  <tr>
+                                                            <th>#</th>
+                                                            <th>Admin</th>
+                                                            <th>Minutes</th>
+                                                  </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                              </table>
+                              <p class="small">Source: <code>data/leaderboard_history.csv</code></p>
+                    </div>
 
-    <div class="card" style="grid-column: 1 / -1">
-      <h3>Trend — Minutes by Admin (last 8 runs)</h3>
-      <canvas id="lineTrend"></canvas>
-      <p class="small">Shows the top 5 by latest week across the last 8 runs.</p>
-    </div>
-  </div>
+                    <div class="card" style="grid-column: 1 / -1">
+                              <h3>Trend — Minutes by Admin (last 8 runs)</h3>
+                              <canvas id="lineTrend"></canvas>
+                              <p class="small">Shows the top 5 by latest week across the last 8 runs.</p>
+                    </div>
+          </div>
 
-  <script>
-    // Path from docs/ to data/
-    const CSV_URL = '../data/leaderboard_history.csv';
+          <script>
+                    // Path from docs/ to data/
+                    const CSV_URL = './data/leaderboard_history.csv';
 
-    function groupBy(arr, keyFn) {
-      const m = new Map();
-      for (const item of arr) {
-        const k = keyFn(item);
-        if (!m.has(k)) m.set(k, []);
-        m.get(k).push(item);
-      }
-      return m;
-    }
+                    function groupBy(arr, keyFn) {
+                              const m = new Map();
+                              for (const item of arr) {
+                                        const k = keyFn(item);
+                                        if (!m.has(k)) m.set(k, []);
+                                        m.get(k).push(item);
+                              }
+                              return m;
+                    }
 
-    async function loadCSV() {
-      const res = await fetch(CSV_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Cannot load CSV: ' + res.status);
-      const text = await res.text();
-      const parsed = Papa.parse(text.trim(), { header: true });
-      // Convert minutes to number
-      const rows = parsed.data
-        .filter(r => r.run_at_utc && r.admin_name)
-        .map(r => ({
-          run_at_utc: r.run_at_utc,
-          week_label: r.week_label || 'last-7d',
-          admin_name: r.admin_name,
-          minutes: Number(r.minutes || 0)
-        }));
-      return rows;
-    }
+                    async function loadCSV() {
+                              const res = await fetch(CSV_URL, { cache: 'no-store' });
+                              if (!res.ok) throw new Error('Cannot load CSV: ' + res.status);
+                              const text = await res.text();
+                              const parsed = Papa.parse(text.trim(), { header: true });
+                              // Convert minutes to number
+                              const rows = parsed.data
+                                        .filter(r => r.run_at_utc && r.admin_name)
+                                        .map(r => ({
+                                                  run_at_utc: r.run_at_utc,
+                                                  week_label: r.week_label || 'last-7d',
+                                                  admin_name: r.admin_name,
+                                                  minutes: Number(r.minutes || 0)
+                                        }));
+                              return rows;
+                    }
 
-    function formatDate(iso) {
-      try { return new Date(iso).toISOString().slice(0,10); }
-      catch { return iso; }
-    }
+                    function formatDate(iso) {
+                              try { return new Date(iso).toISOString().slice(0, 10); }
+                              catch { return iso; }
+                    }
 
-    function buildLatest(rows) {
-      // Find the latest run_at_utc
-      const byRun = groupBy(rows, r => r.run_at_utc);
-      const runs = Array.from(byRun.keys()).sort(); // ISO sorts lexicographically == chronologically
-      const latest = runs[runs.length - 1];
-      const latestRows = byRun.get(latest).sort((a,b) => b.minutes - a.minutes);
-      return { latest, latestRows };
-    }
+                    function buildLatest(rows) {
+                              // Find the latest run_at_utc
+                              const byRun = groupBy(rows, r => r.run_at_utc);
+                              const runs = Array.from(byRun.keys()).sort(); // ISO sorts lexicographically == chronologically
+                              const latest = runs[runs.length - 1];
+                              const latestRows = byRun.get(latest).sort((a, b) => b.minutes - a.minutes);
+                              return { latest, latestRows };
+                    }
 
-    function topN(arr, n) { return arr.slice(0, n); }
+                    function topN(arr, n) { return arr.slice(0, n); }
 
-    function renderLatestTable(latestRows) {
-      const tbody = document.querySelector('#latestTable tbody');
-      tbody.innerHTML = '';
-      latestRows.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${r.admin_name}</td><td>${r.minutes}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
+                    function renderLatestTable(latestRows) {
+                              const tbody = document.querySelector('#latestTable tbody');
+                              tbody.innerHTML = '';
+                              latestRows.forEach((r, i) => {
+                                        const tr = document.createElement('tr');
+                                        tr.innerHTML = `<td>${i + 1}</td><td>${r.admin_name}</td><td>${r.minutes}</td>`;
+                                        tbody.appendChild(tr);
+                              });
+                    }
 
-    function renderBarTop(latestRows, latestIso) {
-      const ctx = document.getElementById('barTop');
-      const top = topN(latestRows, 10);
-      const labels = top.map(r => r.admin_name);
-      const data = top.map(r => r.minutes);
-      new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Minutes', data, borderWidth: 1 }] },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-      });
-      document.getElementById('latestLabel').textContent = 'Week of run: ' + formatDate(latestIso);
-    }
+                    function renderBarTop(latestRows, latestIso) {
+                              const ctx = document.getElementById('barTop');
+                              const top = topN(latestRows, 10);
+                              const labels = top.map(r => r.admin_name);
+                              const data = top.map(r => r.minutes);
+                              new Chart(ctx, {
+                                        type: 'bar',
+                                        data: { labels, datasets: [{ label: 'Minutes', data, borderWidth: 1 }] },
+                                        options: { responsive: true, plugins: { legend: { display: false } } }
+                              });
+                              document.getElementById('latestLabel').textContent = 'Week of run: ' + formatDate(latestIso);
+                    }
 
-    function renderTrend(rows, latestRows) {
-      // pick top 5 admins by latest week
-      const topAdmins = topN(latestRows, 5).map(r => r.admin_name);
-      const byRun = groupBy(rows, r => r.run_at_utc);
-      const runKeys = Array.from(byRun.keys()).sort().slice(-8); // last 8 runs
-      const labels = runKeys.map(k => formatDate(k));
+                    function renderTrend(rows, latestRows) {
+                              // pick top 5 admins by latest week
+                              const topAdmins = topN(latestRows, 5).map(r => r.admin_name);
+                              const byRun = groupBy(rows, r => r.run_at_utc);
+                              const runKeys = Array.from(byRun.keys()).sort().slice(-8); // last 8 runs
+                              const labels = runKeys.map(k => formatDate(k));
 
-      const datasets = topAdmins.map(name => {
-        const data = runKeys.map(run => {
-          const row = byRun.get(run).find(rr => rr.admin_name === name);
-          return row ? row.minutes : 0;
-        });
-        return { label: name, data, borderWidth: 2, fill: false };
-      });
+                              const datasets = topAdmins.map(name => {
+                                        const data = runKeys.map(run => {
+                                                  const row = byRun.get(run).find(rr => rr.admin_name === name);
+                                                  return row ? row.minutes : 0;
+                                        });
+                                        return { label: name, data, borderWidth: 2, fill: false };
+                              });
 
-      new Chart(document.getElementById('lineTrend'), {
-        type: 'line',
-        data: { labels, datasets },
-        options: { responsive: true }
-      });
-    }
+                              new Chart(document.getElementById('lineTrend'), {
+                                        type: 'line',
+                                        data: { labels, datasets },
+                                        options: { responsive: true }
+                              });
+                    }
 
-    (async function init() {
-      try {
-        const rows = await loadCSV();
-        if (!rows.length) {
-          document.body.insertAdjacentHTML('beforeend', '<p class="small">No data yet.</p>');
-          return;
-        }
-        const { latest, latestRows } = buildLatest(rows);
-        renderBarTop(latestRows, latest);
-        renderLatestTable(latestRows);
-        renderTrend(rows, latestRows);
-      } catch (e) {
-        console.error(e);
-        document.body.insertAdjacentHTML('beforeend', '<p class="small">Error loading data.</p>');
-      }
-    })();
-  </script>
+                    (async function init() {
+                              try {
+                                        const rows = await loadCSV();
+                                        if (!rows.length) {
+                                                  document.body.insertAdjacentHTML('beforeend', '<p class="small">No data yet.</p>');
+                                                  return;
+                                        }
+                                        const { latest, latestRows } = buildLatest(rows);
+                                        renderBarTop(latestRows, latest);
+                                        renderLatestTable(latestRows);
+                                        renderTrend(rows, latestRows);
+                              } catch (e) {
+                                        console.error(e);
+                                        document.body.insertAdjacentHTML('beforeend', '<p class="small">Error loading data.</p>');
+                              }
+                    })();
+          </script>
 </body>
+
 </html>
