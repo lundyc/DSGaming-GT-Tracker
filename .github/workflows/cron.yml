@@ -3,7 +3,10 @@ name: Weekly GameTracker OCR
 on:
   schedule:
     - cron: "0 7 * * 0" # Sundays 07:00 UTC
-  workflow_dispatch:
+  workflow_dispatch: # allows manual "Run workflow"
+  # Optional: uncomment to also run on pushes to main
+  # push:
+  #   branches: [ "main" ]
 
 jobs:
   weekly:
@@ -11,9 +14,11 @@ jobs:
     permissions:
       contents: write # allow committing with GITHUB_TOKEN
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repo
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -31,12 +36,15 @@ jobs:
 
       - name: Run scraper
         run: |
-          python gametime_ocr.py || python grab_gt_stats.py
+          python version2.py || python gametime_ocr.py || python grab_gt_stats.py
 
-      - name: Commit new data files
+      - name: Commit new data files (into docs/data)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/*.csv weekly_results.txt weekly_results.json || true
+          mkdir -p docs/data
+          # If your script already writes into docs/data, no copy needed.
+          # Add any CSVs produced plus optional txt/json logs:
+          git add docs/data/*.csv weekly_results.txt weekly_results.json || true
           git commit -m "Weekly stats: $(date -u +%F)" || echo "No changes to commit"
           git push
