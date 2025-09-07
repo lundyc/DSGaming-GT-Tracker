@@ -2,40 +2,41 @@ name: Weekly GameTracker OCR
 
 on:
   schedule:
-    # Every Sunday at 07:00 UTC
-    - cron: "0 7 * * 0"
+    - cron: "0 7 * * 0" # Sundays 07:00 UTC
   workflow_dispatch:
 
 jobs:
-  run-ocr:
+  weekly:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # allow committing with GITHUB_TOKEN
     steps:
-      - name: Check out
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Prepare admins list
+      - name: Ensure admins list exists
         run: |
           if [ ! -f admins.txt ]; then
-            cp admins.sample.txt admins.txt || echo -e "US-B\nElSanto" > admins.txt
+            echo "Admins list (admins.txt) not found." >&2
+            exit 1
           fi
 
-      - name: Run script
+      - name: Run scraper
         run: |
-          python gametime_ocr.py
+          python gametime_ocr.py || python grab_gt_stats.py
 
-      - name: Upload weekly results
-        uses: actions/upload-artifact@v4
-        with:
-          name: weekly-results
-          path: weekly_results.txt
-          if-no-files-found: error
+      - name: Commit new data files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/*.csv weekly_results.txt weekly_results.json || true
+          git commit -m "Weekly stats: $(date -u +%F)" || echo "No changes to commit"
+          git push
