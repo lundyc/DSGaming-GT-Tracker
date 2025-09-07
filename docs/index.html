@@ -1,217 +1,439 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-          <meta charset="utf-8" />
-          <title>GameTracker OCR — Weekly Admin Stats</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <style>
-                    body {
-                              font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-                              margin: 24px;
-                    }
+  <meta charset="utf-8" />
+  <title>GameTracker OCR — Weekly Admin Stats</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Auto-updated weekly dashboard of admin minutes from GameTracker OCR." />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111827;
+      --muted: #666;
+      --border: #e5e7eb;
+      --card: #ffffff;
+      --shadow: 0 2px 8px rgba(0,0,0,.05);
+      --thead: #fafafa;
+      --accent: #3b82f6;
+      --accent-weak: #eff6ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0e13;
+        --fg: #e5e7eb;
+        --muted: #9aa3af;
+        --border: #1f2937;
+        --card: #0f141b;
+        --shadow: 0 2px 10px rgba(0,0,0,.35);
+        --thead: #10151c;
+        --accent: #60a5fa;
+        --accent-weak: #0b2540;
+      }
+    }
+    html, body { background: var(--bg); color: var(--fg); }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    h1 { margin: 0 0 8px; }
+    .muted { color: var(--muted); margin: 0 0 20px; }
+    .wrap { display: grid; gap: 24px; }
+    .grid { display: grid; gap: 24px; grid-template-columns: 1fr; }
+    @media (min-width: 960px) { .grid { grid-template-columns: 1.2fr 1fr; } }
+    .card {
+      padding: 16px; border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow); background: var(--card);
+    }
+    .controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .controls input, .controls select, .controls button, .controls a.btn {
+      padding:8px 10px; border:1px solid var(--border); border-radius:8px; background: var(--bg); color: var(--fg);
+    }
+    .controls button, .controls a.btn { background: var(--accent-weak); border-color: var(--accent); text-decoration:none; }
+    .controls .small { font-size: 12px; color: var(--muted); }
 
-                    h1 {
-                              margin: 0 0 8px;
-                    }
+    .stats { display:grid; gap:12px; grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 720px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+    .stat { padding:12px; border:1px dashed var(--border); border-radius:10px; background: var(--card); }
+    .stat .label { font-size:12px; color: var(--muted); }
+    .stat .value { font-size:20px; font-weight:600; }
 
-                    .muted {
-                              color: #666;
-                              margin: 0 0 20px;
-                    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: var(--thead); position: sticky; top: 0; z-index: 1; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:after { content: ' ⇅'; opacity: 0.5; font-weight: normal; }
+    .small { font-size: 12px; color: var(--muted); }
+    .badge { display:inline-block; padding:2px 6px; border-radius:8px; font-size:12px; }
+    .badge.up   { background:#e6ffed; color:#137333; }
+    .badge.down { background:#ffecec; color:#b00020; }
+    .badge.flat { background:#f2f2f2; color:#555; }
+    @media (prefers-color-scheme: dark) { .badge.flat { background:#1f2937; color:#cbd5e1; } }
 
-                    .wrap {
-                              display: grid;
-                              gap: 24px;
-                    }
-
-                    .card {
-                              padding: 16px;
-                              border: 1px solid #e5e7eb;
-                              border-radius: 12px;
-                              box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
-                              background: #fff;
-                    }
-
-                    table {
-                              width: 100%;
-                              border-collapse: collapse;
-                    }
-
-                    th,
-                    td {
-                              padding: 8px 10px;
-                              border-bottom: 1px solid #eee;
-                              text-align: left;
-                    }
-
-                    th {
-                              background: #fafafa;
-                    }
-
-                    .grid {
-                              display: grid;
-                              gap: 24px;
-                              grid-template-columns: 1fr;
-                    }
-
-                    @media (min-width: 960px) {
-                              .grid {
-                                        grid-template-columns: 1.2fr 1fr;
-                              }
-                    }
-
-                    .small {
-                              font-size: 12px;
-                              color: #777;
-                    }
-          </style>
-          <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    .notice { padding: 10px 12px; border-radius: 10px; border:1px solid var(--border); background: var(--thead); }
+    .sr-only { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-          <h1>Weekly Admin Stats</h1>
-          <p class="muted">Auto-updated every Sunday from GameTracker OCR results.</p>
+  <h1>Weekly Admin Stats</h1>
+  <p class="muted">Auto-updated every Sunday from GameTracker OCR results (docs/data/leaderboard_history.csv).</p>
 
-          <div class="wrap grid">
-                    <div class="card">
-                              <h3>Latest Week — Top Admins</h3>
-                              <canvas id="barTop"></canvas>
-                              <p class="small" id="latestLabel"></p>
-                    </div>
+  <div class="card controls" role="region" aria-label="Dashboard controls">
+    <div class="small">Last updated: <span id="lastUpdated" aria-live="polite">—</span></div>
 
-                    <div class="card">
-                              <h3>Latest Week — Table</h3>
-                              <table id="latestTable">
-                                        <thead>
-                                                  <tr>
-                                                            <th>#</th>
-                                                            <th>Admin</th>
-                                                            <th>Minutes</th>
-                                                  </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                              </table>
-                              <p class="small">Source: <code>data/leaderboard_history.csv</code></p>
-                    </div>
+    <label class="small">Show:
+      <select id="topN" aria-label="Top N admins to display">
+        <option value="5">Top 5</option>
+        <option value="10" selected>Top 10</option>
+        <option value="999">All</option>
+      </select>
+    </label>
 
-                    <div class="card" style="grid-column: 1 / -1">
-                              <h3>Trend — Minutes by Admin (last 8 runs)</h3>
-                              <canvas id="lineTrend"></canvas>
-                              <p class="small">Shows the top 5 by latest week across the last 8 runs.</p>
-                    </div>
-          </div>
+    <label class="small">Trend window:
+      <select id="lastRuns" aria-label="Number of past runs in trend">
+        <option value="4">Last 4 runs</option>
+        <option value="8" selected>Last 8 runs</option>
+        <option value="12">Last 12 runs</option>
+      </select>
+    </label>
 
-          <script>
-                    // Path from docs/ to data/
-                    const CSV_URL = './data/leaderboard_history.csv';
+    <label class="small">Search:
+      <input id="searchBox" type="text" placeholder="filter admins…" inputmode="search" aria-label="Filter admins by name">
+    </label>
 
-                    function groupBy(arr, keyFn) {
-                              const m = new Map();
-                              for (const item of arr) {
-                                        const k = keyFn(item);
-                                        if (!m.has(k)) m.set(k, []);
-                                        m.get(k).push(item);
-                              }
-                              return m;
-                    }
+    <a id="downloadCsv" class="btn" href="#" download>Download full CSV</a>
+    <button id="downloadLatest" type="button" title="Download latest week CSV">Download latest</button>
+    <button id="exportBar" type="button" title="Export bar chart as PNG">Export bar</button>
+    <button id="exportLine" type="button" title="Export line chart as PNG">Export trend</button>
+  </div>
 
-                    async function loadCSV() {
-                              const res = await fetch(CSV_URL, { cache: 'no-store' });
-                              if (!res.ok) throw new Error('Cannot load CSV: ' + res.status);
-                              const text = await res.text();
-                              const parsed = Papa.parse(text.trim(), { header: true });
-                              // Convert minutes to number
-                              const rows = parsed.data
-                                        .filter(r => r.run_at_utc && r.admin_name)
-                                        .map(r => ({
-                                                  run_at_utc: r.run_at_utc,
-                                                  week_label: r.week_label || 'last-7d',
-                                                  admin_name: r.admin_name,
-                                                  minutes: Number(r.minutes || 0)
-                                        }));
-                              return rows;
-                    }
+  <div class="card stats" role="region" aria-label="Summary">
+    <div class="stat"><div class="label">Admins this week</div><div class="value" id="statAdmins">—</div></div>
+    <div class="stat"><div class="label">Total minutes</div><div class="value" id="statTotal">—</div></div>
+    <div class="stat"><div class="label">Median minutes</div><div class="value" id="statMedian">—</div></div>
+    <div class="stat"><div class="label">90th percentile</div><div class="value" id="statP90">—</div></div>
+  </div>
 
-                    function formatDate(iso) {
-                              try { return new Date(iso).toISOString().slice(0, 10); }
-                              catch { return iso; }
-                    }
+  <div class="wrap grid" aria-live="polite">
+    <div class="card">
+      <h3>Latest Week — Top Admins</h3>
+      <canvas id="barTop" height="220" role="img" aria-label="Bar chart of top admins by minutes"></canvas>
+      <p class="small" id="latestLabel"></p>
+    </div>
 
-                    function buildLatest(rows) {
-                              // Find the latest run_at_utc
-                              const byRun = groupBy(rows, r => r.run_at_utc);
-                              const runs = Array.from(byRun.keys()).sort(); // ISO sorts lexicographically == chronologically
-                              const latest = runs[runs.length - 1];
-                              const latestRows = byRun.get(latest).sort((a, b) => b.minutes - a.minutes);
-                              return { latest, latestRows };
-                    }
+    <div class="card">
+      <h3>Latest Week — Table</h3>
+      <div class="notice small" id="tableNotice" hidden>Click headers to sort · Shift+Click to toggle direction</div>
+      <table id="latestTable" aria-describedby="tableNotice">
+        <thead>
+          <tr>
+            <th data-key="rank" class="sortable" scope="col" aria-sort="none">#</th>
+            <th data-key="admin" class="sortable" scope="col" aria-sort="none">Admin</th>
+            <th data-key="minutes" class="sortable" scope="col" aria-sort="descending">Minutes</th>
+            <th data-key="delta" class="sortable" scope="col" aria-sort="none">Δ WoW</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="small">Source: <code>docs/data/leaderboard_history.csv</code></p>
+    </div>
 
-                    function topN(arr, n) { return arr.slice(0, n); }
+    <div class="card" style="grid-column: 1 / -1">
+      <h3>Trend — Minutes by Admin (last N runs)</h3>
+      <canvas id="lineTrend" height="260" role="img" aria-label="Line chart of minutes over recent runs"></canvas>
+      <p class="small">Shows the selected top N (after filter) across the last N runs.</p>
+    </div>
+  </div>
 
-                    function renderLatestTable(latestRows) {
-                              const tbody = document.querySelector('#latestTable tbody');
-                              tbody.innerHTML = '';
-                              latestRows.forEach((r, i) => {
-                                        const tr = document.createElement('tr');
-                                        tr.innerHTML = `<td>${i + 1}</td><td>${r.admin_name}</td><td>${r.minutes}</td>`;
-                                        tbody.appendChild(tr);
-                              });
-                    }
+  <div id="messages" class="small" role="status" aria-live="polite"></div>
 
-                    function renderBarTop(latestRows, latestIso) {
-                              const ctx = document.getElementById('barTop');
-                              const top = topN(latestRows, 10);
-                              const labels = top.map(r => r.admin_name);
-                              const data = top.map(r => r.minutes);
-                              new Chart(ctx, {
-                                        type: 'bar',
-                                        data: { labels, datasets: [{ label: 'Minutes', data, borderWidth: 1 }] },
-                                        options: { responsive: true, plugins: { legend: { display: false } } }
-                              });
-                              document.getElementById('latestLabel').textContent = 'Week of run: ' + formatDate(latestIso);
-                    }
+  <script>
+    // ===== Config / State =====
+    const CSV_PATH = './data/leaderboard_history.csv';
+    const CSV_URL  = `${CSV_PATH}?ts=${Date.now()}`; // cache-buster
+    const PREFS_KEY = 'gt_admin_dashboard_prefs_v1';
 
-                    function renderTrend(rows, latestRows) {
-                              // pick top 5 admins by latest week
-                              const topAdmins = topN(latestRows, 5).map(r => r.admin_name);
-                              const byRun = groupBy(rows, r => r.run_at_utc);
-                              const runKeys = Array.from(byRun.keys()).sort().slice(-8); // last 8 runs
-                              const labels = runKeys.map(k => formatDate(k));
+    const state = {
+      rows: [],
+      latestRows: [],
+      latestRun: null,
+      prevRun: null,
+      topLimit: 10,
+      lastRuns: 8,
+      search: '',
+    };
 
-                              const datasets = topAdmins.map(name => {
-                                        const data = runKeys.map(run => {
-                                                  const row = byRun.get(run).find(rr => rr.admin_name === name);
-                                                  return row ? row.minutes : 0;
-                                        });
-                                        return { label: name, data, borderWidth: 2, fill: false };
-                              });
+    // ===== Utilities =====
+    function savePrefs(){
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify({ topLimit: state.topLimit, lastRuns: state.lastRuns, search: state.search }));
+      } catch {}
+    }
+    function loadPrefs(){
+      try {
+        const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+        if (p.topLimit) state.topLimit = p.topLimit;
+        if (p.lastRuns) state.lastRuns = p.lastRuns;
+        if (typeof p.search === 'string') state.search = p.search;
+      } catch {}
+      // reflect UI
+      document.getElementById('topN').value = String(state.topLimit);
+      document.getElementById('lastRuns').value = String(state.lastRuns);
+      document.getElementById('searchBox').value = state.search;
+    }
+    function fmtDate(iso){ try { return new Date(iso).toISOString().slice(0,10); } catch { return iso; } }
+    function groupBy(arr, keyFn) {
+      const m = new Map();
+      for (const item of arr) {
+        const k = keyFn(item);
+        if (!m.has(k)) m.set(k, []);
+        m.get(k).push(item);
+      }
+      return m;
+    }
+    const debounce = (fn, ms=200) => {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    };
+    function percentile(arr, p){
+      if (!arr.length) return 0;
+      const a = [...arr].sort((x,y)=>x-y);
+      const idx = Math.min(a.length - 1, Math.max(0, Math.floor((p/100) * (a.length-1))));
+      return a[idx];
+    }
 
-                              new Chart(document.getElementById('lineTrend'), {
-                                        type: 'line',
-                                        data: { labels, datasets },
-                                        options: { responsive: true }
-                              });
-                    }
+    // Robust fetch with timeout + retry
+    async function fetchWithRetry(url, { timeout=8000, retries=2 } = {}){
+      for (let attempt=0; attempt<=retries; attempt++){
+        const ctrl = new AbortController();
+        const id = setTimeout(()=>ctrl.abort(), timeout);
+        try {
+          const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+          clearTimeout(id);
+          if (res.ok) return res;
+          if (attempt === retries) throw new Error('HTTP '+res.status);
+        } catch (e) {
+          clearTimeout(id);
+          if (attempt === retries) throw e;
+          await new Promise(r => setTimeout(r, 600 * (attempt+1)));
+        }
+      }
+    }
 
-                    (async function init() {
-                              try {
-                                        const rows = await loadCSV();
-                                        if (!rows.length) {
-                                                  document.body.insertAdjacentHTML('beforeend', '<p class="small">No data yet.</p>');
-                                                  return;
-                                        }
-                                        const { latest, latestRows } = buildLatest(rows);
-                                        renderBarTop(latestRows, latest);
-                                        renderLatestTable(latestRows);
-                                        renderTrend(rows, latestRows);
-                              } catch (e) {
-                                        console.error(e);
-                                        document.body.insertAdjacentHTML('beforeend', '<p class="small">Error loading data.</p>');
-                              }
-                    })();
-          </script>
+    // ===== Data load / compute =====
+    async function loadCSV() {
+      const res = await fetchWithRetry(CSV_URL, { timeout: 10000, retries: 2 });
+      const text = await res.text();
+      const parsed = Papa.parse(text.trim(), { header: true });
+      return parsed.data
+        .filter(r => r.run_at_utc && r.admin_name)
+        .map(r => ({
+          run_at_utc: r.run_at_utc,
+          week_label: r.week_label || 'last-7d',
+          admin_name: r.admin_name,
+          minutes: Number(r.minutes || 0)
+        }));
+    }
+
+    function computeLatestAndPrev(rows){
+      const byRun = groupBy(rows, r => r.run_at_utc);
+      const runs = Array.from(byRun.keys()).sort(); // ISO order
+      const latest = runs[runs.length - 1];
+      const prev   = runs.length > 1 ? runs[runs.length - 2] : null;
+      const latestRows = byRun.get(latest).sort((a,b)=> b.minutes - a.minutes);
+      const prevRows   = prev ? byRun.get(prev) : [];
+
+      const prevMap = new Map(prevRows.map(r => [r.admin_name, r.minutes]));
+      const enriched = latestRows.map(r => {
+        const prevMins = prevMap.get(r.admin_name) ?? 0;
+        return { ...r, delta: r.minutes - prevMins };
+      });
+
+      return { latest, prev, latestRows: enriched, byRun, runKeys: runs };
+    }
+
+    function filtered(rows){
+      const q = state.search.trim().toLowerCase();
+      if (!q) return rows;
+      return rows.filter(r => r.admin_name.toLowerCase().includes(q));
+    }
+
+    // ===== Rendering =====
+    function renderStats(latestRows){
+      const mins = latestRows.map(r => r.minutes);
+      const total = mins.reduce((a,b)=>a+b, 0);
+      const median = percentile(mins, 50);
+      const p90 = percentile(mins, 90);
+      document.getElementById('statAdmins').textContent = String(latestRows.length);
+      document.getElementById('statTotal').textContent  = String(total);
+      document.getElementById('statMedian').textContent = String(median);
+      document.getElementById('statP90').textContent    = String(p90);
+    }
+
+    function renderLatestTable(latestRows) {
+      const tbody = document.querySelector('#latestTable tbody');
+      tbody.innerHTML = '';
+      const top = filtered(latestRows).slice(0, state.topLimit);
+
+      top.forEach((r, i) => {
+        const badgeClass = r.delta > 0 ? 'up' : (r.delta < 0 ? 'down' : 'flat');
+        const sign = r.delta > 0 ? '+' : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${r.admin_name}</td>
+          <td>${r.minutes}</td>
+          <td><span class="badge ${badgeClass}">${sign}${r.delta}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderBarTop(latestRows, latestIso) {
+      const el = document.getElementById('barTop');
+      if (window._bar) window._bar.destroy();
+      const top = filtered(latestRows).slice(0, state.topLimit);
+      const labels = top.map(r => r.admin_name);
+      const data   = top.map(r => r.minutes);
+      window._bar = new Chart(el, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Minutes', data, borderWidth: 1 }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+      document.getElementById('latestLabel').textContent = 'Week of run: ' + fmtDate(latestIso);
+      document.getElementById('lastUpdated').textContent = fmtDate(latestIso);
+      document.getElementById('downloadCsv').href = CSV_PATH;
+    }
+
+    function renderTrend(rows, latestRows, byRun, runKeys) {
+      const el = document.getElementById('lineTrend');
+      if (window._line) window._line.destroy();
+
+      const topAdmins = filtered(latestRows).slice(0, state.topLimit).map(r => r.admin_name);
+      const tail = runKeys.slice(-state.lastRuns);
+      const labels = tail.map(fmtDate);
+
+      const datasets = topAdmins.map(name => {
+        const data = tail.map(run => {
+          const row = (byRun.get(run) || []).find(rr => rr.admin_name === name);
+          return row ? row.minutes : 0;
+        });
+        return { label: name, data, borderWidth: 2, fill: false };
+      });
+
+      window._line = new Chart(el, { type: 'line', data: { labels, datasets }, options: { responsive: true } });
+    }
+
+    // Sorting + a11y
+    let currentSort = { key: 'minutes', dir: 'desc' };
+    function sortRows(rows){
+      const sorted = [...rows];
+      const { key, dir } = currentSort;
+      sorted.sort((a,b) => {
+        if (key === 'minutes' || key === 'delta') return dir==='asc' ? (a[key]-b[key]) : (b[key]-a[key]);
+        if (key === 'admin') return dir==='asc' ? a.admin_name.localeCompare(b.admin_name) : b.admin_name.localeCompare(a.admin_name);
+        return 0;
+      });
+      return sorted;
+    }
+    function updateAriaSort(){
+      const map = { 'minutes':'minutes', 'delta':'delta', 'admin':'admin' };
+      document.querySelectorAll('#latestTable th.sortable').forEach(th => {
+        const key = th.getAttribute('data-key');
+        const logical = key==='rank' ? 'minutes' : (map[key] || key);
+        th.setAttribute('aria-sort', logical === currentSort.key ? (currentSort.dir==='asc' ? 'ascending' : 'descending') : 'none');
+      });
+    }
+    function attachSortHandlers(){
+      document.querySelectorAll('#latestTable th.sortable').forEach(th => {
+        th.addEventListener('click', (ev) => {
+          const key = th.getAttribute('data-key');
+          const map = { rank:'minutes', admin:'admin', minutes:'minutes', delta:'delta' };
+          const nextKey = map[key] || 'minutes';
+          if (currentSort.key === nextKey) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.key = nextKey; currentSort.dir = nextKey==='admin' ? 'asc' : 'desc';
+          }
+          updateAriaSort();
+          refresh();
+        });
+      });
+      updateAriaSort();
+    }
+
+    // Controls
+    function attachControls(){
+      document.getElementById('topN').addEventListener('change', e => {
+        state.topLimit = parseInt(e.target.value, 10);
+        savePrefs(); refresh();
+      });
+      document.getElementById('lastRuns').addEventListener('change', e => {
+        state.lastRuns = parseInt(e.target.value, 10);
+        savePrefs(); refresh();
+      });
+      document.getElementById('searchBox').addEventListener('input', debounce(e => {
+        state.search = e.target.value;
+        savePrefs(); refresh();
+      }, 180));
+
+      // Downloads/exports
+      document.getElementById('downloadLatest').addEventListener('click', () => {
+        const top = filtered(state.latestRows);
+        const csv = 'admin_name,minutes\r\n' + top.map(r => `"${r.admin_name.replace(/"/g,'""')}",${r.minutes}`).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `latest_${fmtDate(state.latestRun)}.csv`; a.click();
+        URL.revokeObjectURL(url);
+      });
+      document.getElementById('exportBar').addEventListener('click', () => {
+        if (!window._bar) return;
+        const a = document.createElement('a');
+        a.href = window._bar.toBase64Image('image/png', 1);
+        a.download = `top_${fmtDate(state.latestRun)}.png`; a.click();
+      });
+      document.getElementById('exportLine').addEventListener('click', () => {
+        if (!window._line) return;
+        const a = document.createElement('a');
+        a.href = window._line.toBase64Image('image/png', 1);
+        a.download = `trend_${fmtDate(state.latestRun)}.png`; a.click();
+      });
+    }
+
+    function refresh(){
+      const sorted = sortRows(state.latestRows);
+      renderBarTop(sorted, state.latestRun);
+      renderLatestTable(sorted);
+      renderStats(sorted);
+      renderTrend(state.rows, sorted, state._byRun, state._runKeys);
+    }
+
+    // ===== Init =====
+    (async function init() {
+      try {
+        loadPrefs();
+        document.getElementById('messages').textContent = 'Loading data…';
+        const rows = await loadCSV();
+        state.rows = rows;
+        if (!rows.length) {
+          document.getElementById('messages').innerHTML = '<div class="notice">No data yet. Run the scraper once to generate CSVs in <code>docs/data/</code>.</div>';
+          return;
+        }
+        const { latest, prev, latestRows, byRun, runKeys } = computeLatestAndPrev(rows);
+        state.latestRun  = latest;
+        state.prevRun    = prev;
+        state.latestRows = latestRows;
+        state._byRun = byRun;
+        state._runKeys = runKeys;
+
+        attachControls();
+        attachSortHandlers();
+        refresh();
+
+        document.getElementById('messages').textContent = '';
+      } catch (e) {
+        console.error(e);
+        document.getElementById('messages').innerHTML = '<div class="notice">Error loading data (CSV not found or network issue). Ensure files exist under <code>docs/data/</code>.</div>';
+      }
+    })();
+  </script>
 </body>
-
 </html>
