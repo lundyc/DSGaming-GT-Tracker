@@ -1,0 +1,32 @@
+[
+  {
+    "run_at_utc": "2025-09-07T22:23:14Z",
+    "week_label": "last-7d",
+    "admin_name": "US-B",
+    "minutes": 717
+  },
+  {
+    "run_at_utc": "2025-09-07T22:23:14Z",
+    "week_label": "last-7d",
+    "admin_name": "ALTAIR IBN LA AHAD",
+    "minutes": 408
+  },
+  {
+    "run_at_utc": "2025-09-07T22:23:14Z",
+    "week_label": "last-7d",
+    "admin_name": "ElSanto",
+    "minutes": 354
+  },
+  {
+    "run_at_utc": "2025-09-07T22:23:14Z",
+    "week_label": "last-7d",
+    "admin_name": "-k1LLa",
+    "minutes": 281
+  },
+  {
+    "run_at_utc": "2025-09-07T22:23:14Z",
+    "week_label": "last-7d",
+    "admin_name": "BaRoN",
+    "minutes": 227
+  }
+]
