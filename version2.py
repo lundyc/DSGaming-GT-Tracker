@@ -19,7 +19,7 @@ except Exception:
 HOST = "149.202.87.35:27015"
 START = "-1w"
 OUT_DIR = "images"
-DATA_DIR = "data"
+DATA_DIR = "docs/data"
 CROP_BOX = (39, 0, 260, 152)
 SCALE_FACTOR = 2
 
