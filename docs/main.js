@@ -51,6 +51,24 @@
                               return a[idx];
                     }
 
+                    async function checkSession() {
+                              try {
+                                        const res = await fetch('/api/session', { credentials: 'include' });
+                                        const data = res.ok ? await res.json() : { role: 'guest' };
+                                        if (data.role !== 'admin') {
+                                                  ['downloadLatest', 'exportBar', 'exportLine'].forEach(id => {
+                                                            const el = document.getElementById(id);
+                                                            if (el) { el.disabled = true; el.style.display = 'none'; }
+                                                  });
+                                        }
+                              } catch (e) {
+                                        ['downloadLatest', 'exportBar', 'exportLine'].forEach(id => {
+                                                  const el = document.getElementById(id);
+                                                  if (el) { el.disabled = true; el.style.display = 'none'; }
+                                        });
+                              }
+                    }
+
                     // Robust fetch with timeout + retry
                     async function fetchWithRetry(url, { timeout = 8000, retries = 2 } = {}) {
                               for (let attempt = 0; attempt <= retries; attempt++) {
@@ -276,6 +294,7 @@
                     (async function init() {
                               try {
                                         loadPrefs();
+                                        await checkSession();
                                         document.getElementById('messages').textContent = 'Loading data…';
                                         const rows = await loadCSV();
                                         state.rows = rows;
