@@ -119,6 +119,18 @@
                               document.getElementById('statP90').textContent = String(p90);
                     }
 
+                    function renderQuick(latestRows) {
+                              const el = document.getElementById('quickStats');
+                              if (!el) return;
+                              el.textContent = `Players: ${latestRows.length} | CPU: —`;
+                    }
+
+                    function renderStatusPanel(latestIso) {
+                              const panel = document.getElementById('statusPanel');
+                              if (!panel) return;
+                              panel.innerHTML = `<div class="card"><h3>Server</h3><p>Last run: ${fmtDate(latestIso)}</p></div>`;
+                    }
+
                     function renderLatestTable(latestRows) {
                               const tbody = document.querySelector('#latestTable tbody');
                               tbody.innerHTML = '';
@@ -256,6 +268,8 @@
                               renderLatestTable(sorted);
                               renderStats(sorted);
                               renderTrend(state.rows, sorted, state._byRun, state._runKeys);
+                              renderQuick(sorted);
+                              renderStatusPanel(state.latestRun);
                     }
 
                     // ===== Init =====

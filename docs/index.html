@@ -12,102 +12,100 @@
 </head>
 
 <body>
-          <header>
-                    <h1>Weekly Admin Stats</h1>
-                    <p class="muted">Auto-updated every Sunday from GameTracker OCR results (docs/data/leaderboard_history.csv).</p>
+          <nav id="sidebar">
+                    <!-- navigation links/icons -->
+          </nav>
+
+          <header id="statsBar">
+                    <div id="quickStats" class="small"></div>
+                    <div class="card stats" role="region" aria-label="Summary">
+                              <div class="stat">
+                                        <div class="label">Admins this week</div>
+                                        <div class="value" id="statAdmins">—</div>
+                              </div>
+                              <div class="stat">
+                                        <div class="label">Total minutes</div>
+                                        <div class="value" id="statTotal">—</div>
+                              </div>
+                              <div class="stat">
+                                        <div class="label">Median minutes</div>
+                                        <div class="value" id="statMedian">—</div>
+                              </div>
+                              <div class="stat">
+                                        <div class="label">90th percentile</div>
+                                        <div class="value" id="statP90">—</div>
+                              </div>
+                    </div>
           </header>
 
-          <main>
-          <div class="card controls" role="region" aria-label="Dashboard controls">
-                    <div class="small">Last updated: <span id="lastUpdated" aria-live="polite">—</span></div>
+          <section id="dashboard">
+                    <h1>Weekly Admin Stats</h1>
+                    <p class="muted">Auto-updated every Sunday from GameTracker OCR results (docs/data/leaderboard_history.csv).</p>
 
-                    <label class="small">Show:
-                              <select id="topN" aria-label="Top N admins to display">
-                                        <option value="5">Top 5</option>
-                                        <option value="10" selected>Top 10</option>
-                                        <option value="999">All</option>
-                              </select>
-                    </label>
+                    <div class="card controls" role="region" aria-label="Dashboard controls">
+                              <div class="small">Last updated: <span id="lastUpdated" aria-live="polite">—</span></div>
 
-                    <label class="small">Trend window:
-                              <select id="lastRuns" aria-label="Number of past runs in trend">
-                                        <option value="4">Last 4 runs</option>
-                                        <option value="8" selected>Last 8 runs</option>
-                                        <option value="12">Last 12 runs</option>
-                              </select>
-                    </label>
+                              <label class="small">Show:
+                                        <select id="topN" aria-label="Top N admins to display">
+                                                  <option value="5">Top 5</option>
+                                                  <option value="10" selected>Top 10</option>
+                                                  <option value="999">All</option>
+                                        </select>
+                              </label>
 
-                    <label class="small">Search:
-                              <input id="searchBox" type="text" placeholder="filter admins…" inputmode="search"
-                                        aria-label="Filter admins by name">
-                    </label>
+                              <label class="small">Trend window:
+                                        <select id="lastRuns" aria-label="Number of past runs in trend">
+                                                  <option value="4">Last 4 runs</option>
+                                                  <option value="8" selected>Last 8 runs</option>
+                                                  <option value="12">Last 12 runs</option>
+                                        </select>
+                              </label>
 
-                    <a id="downloadCsv" class="btn" href="#" download>Download full CSV</a>
-                    <button id="downloadLatest" type="button" title="Download latest week CSV">Download latest</button>
-                    <button id="exportBar" type="button" title="Export bar chart as PNG">Export bar</button>
-                    <button id="exportLine" type="button" title="Export line chart as PNG">Export trend</button>
-          </div>
+                              <label class="small">Search:
+                                        <input id="searchBox" type="text" placeholder="filter admins…" inputmode="search" aria-label="Filter admins by name">
+                              </label>
 
-          <div class="card stats" role="region" aria-label="Summary">
-                    <div class="stat">
-                              <div class="label">Admins this week</div>
-                              <div class="value" id="statAdmins">—</div>
-                    </div>
-                    <div class="stat">
-                              <div class="label">Total minutes</div>
-                              <div class="value" id="statTotal">—</div>
-                    </div>
-                    <div class="stat">
-                              <div class="label">Median minutes</div>
-                              <div class="value" id="statMedian">—</div>
-                    </div>
-                    <div class="stat">
-                              <div class="label">90th percentile</div>
-                              <div class="value" id="statP90">—</div>
-                    </div>
-          </div>
-
-          <div class="wrap grid" aria-live="polite">
-                    <div class="card">
-                              <h3>Latest Week — Top Admins</h3>
-                              <canvas id="barTop" height="220" role="img"
-                                        aria-label="Bar chart of top admins by minutes"></canvas>
-                              <p class="small" id="latestLabel"></p>
+                              <a id="downloadCsv" class="btn" href="#" download>Download full CSV</a>
+                              <button id="downloadLatest" type="button" title="Download latest week CSV">Download latest</button>
+                              <button id="exportBar" type="button" title="Export bar chart as PNG">Export bar</button>
+                              <button id="exportLine" type="button" title="Export line chart as PNG">Export trend</button>
                     </div>
 
-                    <div class="card">
-                              <h3>Latest Week — Table</h3>
-                              <div class="notice small" id="tableNotice" hidden>Click headers to sort · Shift+Click to
-                                        toggle direction</div>
-                              <table id="latestTable" aria-describedby="tableNotice">
-                                        <thead>
-                                                  <tr>
-                                                            <th data-key="rank" class="sortable" scope="col"
-                                                                      aria-sort="none">#</th>
-                                                            <th data-key="admin" class="sortable" scope="col"
-                                                                      aria-sort="none">Admin</th>
-                                                            <th data-key="minutes" class="sortable" scope="col"
-                                                                      aria-sort="descending">Minutes</th>
-                                                            <th data-key="delta" class="sortable" scope="col"
-                                                                      aria-sort="none">Δ WoW</th>
-                                                  </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                              </table>
-                              <p class="small">Source: <code>docs/data/leaderboard_history.csv</code></p>
+                    <div class="wrap grid" aria-live="polite">
+                              <div class="card">
+                                        <h3>Latest Week — Top Admins</h3>
+                                        <canvas id="barTop" height="220" role="img" aria-label="Bar chart of top admins by minutes"></canvas>
+                                        <p class="small" id="latestLabel"></p>
+                              </div>
+
+                              <div class="card">
+                                        <h3>Latest Week — Table</h3>
+                                        <div class="notice small" id="tableNotice" hidden>Click headers to sort · Shift+Click to toggle direction</div>
+                                        <table id="latestTable" aria-describedby="tableNotice">
+                                                  <thead>
+                                                            <tr>
+                                                                      <th data-key="rank" class="sortable" scope="col" aria-sort="none">#</th>
+                                                                      <th data-key="admin" class="sortable" scope="col" aria-sort="none">Admin</th>
+                                                                      <th data-key="minutes" class="sortable" scope="col" aria-sort="descending">Minutes</th>
+                                                                      <th data-key="delta" class="sortable" scope="col" aria-sort="none">Δ WoW</th>
+                                                            </tr>
+                                                  </thead>
+                                                  <tbody></tbody>
+                                        </table>
+                                        <p class="small">Source: <code>docs/data/leaderboard_history.csv</code></p>
+                              </div>
+
+                              <div class="card" style="grid-column: 1 / -1">
+                                        <h3>Trend — Minutes by Admin (last N runs)</h3>
+                                        <canvas id="lineTrend" height="260" role="img" aria-label="Line chart of minutes over recent runs"></canvas>
+                                        <p class="small">Shows the selected top N (after filter) across the last N runs.</p>
+                              </div>
                     </div>
 
-                    <div class="card" style="grid-column: 1 / -1">
-                              <h3>Trend — Minutes by Admin (last N runs)</h3>
-                              <canvas id="lineTrend" height="260" role="img"
-                                        aria-label="Line chart of minutes over recent runs"></canvas>
-                              <p class="small">Shows the selected top N (after filter) across the last N runs.</p>
-                    </div>
-          </div>
+                    <div id="messages" class="small" role="status" aria-live="polite"></div>
+          </section>
 
-          <div id="messages" class="small" role="status" aria-live="polite"></div>
-
-          </main>
+          <aside id="statusPanel"></aside>
 
           <script type="module" src="main.js"></script>
 </body>
