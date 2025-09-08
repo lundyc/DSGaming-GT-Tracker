@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Unban Request</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <form id="unbanForm" class="card" style="max-width:500px;margin:2rem auto;">
+    <h2>Unban Request</h2>
+    <label class="small">SteamID<input name="steam_id" type="text" required /></label>
+    <label class="small">Contact Info<input name="contact" type="text" required /></label>
+    <label class="small">Justification<textarea name="justification" rows="5" required></textarea></label>
+    <button type="submit">Submit</button>
+    <div id="msg" class="small"></div>
+  </form>
+  <script>
+    document.getElementById('unbanForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const res = await fetch('/api/unban', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          steam_id: form.steam_id.value,
+          contact: form.contact.value,
+          justification: form.justification.value
+        })
+      });
+      const msg = document.getElementById('msg');
+      if (res.ok) {
+        msg.style.color = 'green';
+        msg.textContent = 'Request submitted. We will review it soon.';
+        form.reset();
+      } else {
+        msg.style.color = 'red';
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if (data.errors) {
+          msg.textContent = Object.values(data.errors).join(' ');
+        } else if (data.error) {
+          msg.textContent = data.error;
+        } else {
+          msg.textContent = 'Submission failed.';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
