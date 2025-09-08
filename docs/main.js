@@ -51,6 +51,26 @@
                               return a[idx];
                     }
 
+
+                    async function checkSession() {
+                              try {
+                                        const res = await fetch('/api/session', { credentials: 'include' });
+                                        const data = res.ok ? await res.json() : { role: 'guest' };
+                                        if (data.role !== 'admin') {
+                                                  ['downloadLatest', 'exportBar', 'exportLine'].forEach(id => {
+                                                            const el = document.getElementById(id);
+                                                            if (el) { el.disabled = true; el.style.display = 'none'; }
+                                                  });
+                                        }
+                              } catch (e) {
+                                        ['downloadLatest', 'exportBar', 'exportLine'].forEach(id => {
+                                                  const el = document.getElementById(id);
+                                                  if (el) { el.disabled = true; el.style.display = 'none'; }
+                                        });
+                              }
+                    }
+
+
                     // Robust fetch with timeout + retry
                     async function fetchWithRetry(url, { timeout = 8000, retries = 2 } = {}) {
                               for (let attempt = 0; attempt <= retries; attempt++) {
@@ -118,6 +138,20 @@
                               document.getElementById('statMedian').textContent = String(median);
                               document.getElementById('statP90').textContent = String(p90);
                     }
+
+
+                    function renderQuick(latestRows) {
+                              const el = document.getElementById('quickStats');
+                              if (!el) return;
+                              el.textContent = `Players: ${latestRows.length} | CPU: —`;
+                    }
+
+                    function renderStatusPanel(latestIso) {
+                              const panel = document.getElementById('statusPanel');
+                              if (!panel) return;
+                              panel.innerHTML = `<div class="card"><h3>Server</h3><p>Last run: ${fmtDate(latestIso)}</p></div>`;
+                    }
+
 
                     function renderLatestTable(latestRows) {
                               const tbody = document.querySelector('#latestTable tbody');
@@ -256,12 +290,19 @@
                               renderLatestTable(sorted);
                               renderStats(sorted);
                               renderTrend(state.rows, sorted, state._byRun, state._runKeys);
+
+                              renderQuick(sorted);
+                              renderStatusPanel(state.latestRun);
+
                     }
 
                     // ===== Init =====
                     (async function init() {
                               try {
                                         loadPrefs();
+
+                                        await checkSession();
+
                                         document.getElementById('messages').textContent = 'Loading data…';
                                         const rows = await loadCSV();
                                         state.rows = rows;
