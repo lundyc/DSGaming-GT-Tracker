@@ -1,15 +1,16 @@
 GT FOR PUBLIC
-GuNsNGloRy | AmmaR = 778
-BaRoN = 663
-chani = 593
-R()CK~KI||3R = 588
-95 | HakeRs = 555
-DS || DaWaWeeN = 317
-LeaNuX || MeMo = 289
-BaReS = 244
-< gHo$T R1D3r=  > = 221
-s@bin@ = 119
-DS || fReak* = 38
+s@bin@ = 503
+BaRoN = 448
+95 | HakeRs = 440
+chani = 411
+DS || DaWaWeeN = 383
+R()CK~KI||3R = 293
+GuNsNGloRy | AmmaR = 259
+LeaNuX || MeMo = 242
+US-B = 241
+< gHo$T R1D3r=  > = 183
+BaReS = 33
+DS || fReak* = 15
 Altair Ibn La Ahad = 0
 anouar = 0
 DS || Miladiii = 0
@@ -19,5 +20,4 @@ N00bie || (0-0) = 0
 N00bie || MOUSE? = 0
 N00bie || WOLF = 0
 Noor = 0
-US-B = 0
 what the = 0
